@@ -162,7 +162,7 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /**
-     * @param amountDSCToMint The amount of decentralized stablecoin to min
+     * @param amountDSCToMint The amount of decentralized stablecoin to mint
      * @notice they must have more collaterral value than the minimum threshold
      */
     function mintDSC(uint256 amountDSCToMint) public moreThanZero(amountDSCToMint) nonReentrant {
@@ -228,7 +228,6 @@ contract DSCEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender); // IF the liquidator is now below the health factor, revert
     }
 
-    function getHealthFactor() external view {}
 
     /////////////////////////////////
     //Private & Internal Functions //
@@ -277,11 +276,17 @@ contract DSCEngine is ReentrancyGuard {
         // 2. Get the value of all DSC
         // 3. Return the ratio
         (uint256 totalDSCMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
-        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return _calculateHealthFactor(totalDSCMinted, collateralValueInUsd);
+    }
 
+    function _calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd) internal pure returns (uint256) {
+        // handle divide by zero
+        if (totalDscMinted == 0) return type(uint256).max;
         // $100 ETH * 50 = $5000 / 100 = $50 is what we will compare with the DSC borrowed
+        // Basically we compare the half of the collateral value with the DSC borrowed
         // If it is lower than 1, this will return 0
-        return (collateralAdjustedForThreshold * PRECISION) / totalDSCMinted;
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
     }
 
     // 1. Check health factor (do they have enough collateral ?)
@@ -294,8 +299,12 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /////////////////////////////////
-    // Public & External Functions //
+    // Public & External & Pure   //
     ////////////////////////////////
+
+    function calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd) external pure returns (uint256) {
+        return _calculateHealthFactor(totalDscMinted, collateralValueInUsd);
+    }
 
     function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
@@ -325,4 +334,22 @@ contract DSCEngine is ReentrancyGuard {
     function getAccountInformation(address user) external view returns (uint256 totalDSCMinted, uint256 collateralValueInUsd) {
         (totalDSCMinted, collateralValueInUsd) = _getAccountInformation(user);
     }
+
+
+    function getAdditionalPriceFeedPrecision() external pure returns (uint256) {
+        return ADDITIONAL_FEED_PRECISION;
+    }
+
+    function getPrecision() external pure returns (uint256) {
+        return PRECISION;
+    }
+
+    function getLiquidationThreshold() external pure returns (uint256) {
+        return LIQUIDATION_THRESHOLD;
+    }
+
+    function getLiquidationPrecision() external pure returns (uint256) {
+        return LIQUIDATION_PRECISION;
+    }
+
 }
