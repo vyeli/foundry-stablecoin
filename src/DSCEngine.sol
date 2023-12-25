@@ -236,7 +236,7 @@ contract DSCEngine is ReentrancyGuard {
 
 
     /**
-     * @dev Low level internal function, do not call unless the funciton calling it is checking for health factors being broken
+     * @dev Low level internal function, do not call unless the funciton calling it, is checking for health factors being broken
      */
     function _burnDSC(uint256 amountDscToBurn, address onBehalftOf, address dscFrom) private {
         s_DSCMinted[onBehalftOf] -= amountDscToBurn;
@@ -320,5 +320,9 @@ contract DSCEngine is ReentrancyGuard {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.latestRoundData();
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+    }
+
+    function getAccountInformation(address user) external view returns (uint256 totalDSCMinted, uint256 collateralValueInUsd) {
+        (totalDSCMinted, collateralValueInUsd) = _getAccountInformation(user);
     }
 }
