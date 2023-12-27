@@ -219,6 +219,7 @@ contract DSCEngine is ReentrancyGuard {
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
         _redeemCollateral(collateral, totalCollateralToRedeem, user, msg.sender);
         // We need to burn the DSC they borrowed to improve their health factor
+        // by burning the DSC of the liquidator, we are removing DSC from the system (which maintains the system overcollateralized)
         _burnDSC(debtToCover, user, msg.sender);
 
         uint256 endingUserHealthFactor = _healthFactor(user);
@@ -350,6 +351,14 @@ contract DSCEngine is ReentrancyGuard {
 
     function getLiquidationPrecision() external pure returns (uint256) {
         return LIQUIDATION_PRECISION;
+    }
+
+    function getLiquidationBonus() external pure returns (uint256) {
+        return LIQUIDATION_BONUS;
+    }
+
+    function getHealthFactor(address user) external view returns (uint256) {
+        return _healthFactor(user);
     }
 
 }
