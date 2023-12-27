@@ -569,4 +569,58 @@ contract DSCEngineTest is Test {
         (uint256 userDscMinted,) = dscEngine.getAccountInformation(user);
         assertEq(userDscMinted, 0);
     }
+
+    ////////////////////////////////
+    // View & Pure Function Tests //
+    ////////////////////////////////
+
+    function testGetCollateralPriceFeed() public {
+        address expectedPriceFeed = ethUsdPriceFeed;
+        address actualPriceFeed = dscEngine.getCollateralPriceFeed(weth);
+        assertEq(expectedPriceFeed, actualPriceFeed);
+    }
+
+    function testGetCollateralTokens() public {
+        address[] memory collateralTokens = dscEngine.getCollateralTokens();
+        assertEq(collateralTokens.length, 2);
+        assertEq(collateralTokens[0], weth);
+        assertEq(collateralTokens[1], wbtc);
+    }
+
+    function testGetMinHealthFactor() public {
+        uint256 expectedMinHealthFactor = dscEngine.getMinHealthFactor();
+        assertEq(expectedMinHealthFactor, 1 ether);
+    }
+
+    function testGetLiquidationThreshold() public {
+        uint256 expectedLiquidationThreshold = dscEngine.getLiquidationThreshold();
+        assertEq(expectedLiquidationThreshold, 50);
+    }
+
+    function testGetAccountCollateralValueFromInformation() public depositedCollateral {
+        (, uint256 collateralValueInUSD) = dscEngine.getAccountInformation(user);
+        uint256 expectedCollateralValueInUSD = dscEngine.getUSDValue(weth, AMOUNT_COLLATERAL);
+        assertEq(collateralValueInUSD, expectedCollateralValueInUSD);
+    }
+
+    function testGetCollateralBalanceOfUser() public {
+        vm.startPrank(user);
+        ERC20Mock(weth).approve(address(dscEngine), AMOUNT_COLLATERAL);
+        dscEngine.depositCollateral(weth, AMOUNT_COLLATERAL);
+        vm.stopPrank();
+        uint256 collateralValue = dscEngine.getAccountCollateralValue(user);
+        uint256 expectedCollateralValue = dscEngine.getUSDValue(weth, AMOUNT_COLLATERAL);
+        assertEq(collateralValue, expectedCollateralValue);
+    }
+
+    function testGetDSC() public {
+        address expectedDsc = dscEngine.getDSC();
+        assertEq(expectedDsc, address(dsc));
+    }
+
+    function testGetLiquidationPrecision() public {
+        uint256 expectedLiquidationPrecision = dscEngine.getLiquidationPrecision();
+        assertEq(expectedLiquidationPrecision, 100);
+    }
+
 }
